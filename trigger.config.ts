@@ -1,7 +1,9 @@
 import type { TriggerConfig } from "@trigger.dev/sdk/v3";
+import "dotenv/config";
 
 export const config: TriggerConfig = {
-    project: "proj_placeholder", // The user will need to put their real project ID here
+    project: process.env.TRIGGER_PROJECT_ID ?? "proj_placeholder",
+    maxDuration: 300, // 5 minutes
     logLevel: "log",
     retries: {
         enabledInDev: true,

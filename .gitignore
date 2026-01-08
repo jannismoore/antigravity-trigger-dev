@@ -4,3 +4,7 @@ dist
 .DS_Store
 coverage
 .nyc_output
+
+
+# Trigger.dev
+.trigger
