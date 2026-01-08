@@ -52,3 +52,22 @@ Or use the integrated Agent Workflow if running within the Antigravity environme
 ## Directory Structure
 - `src/trigger/`: Where your workflow task files live.
 - `src/agent/`: The code for the Agentic Builder.
+- `src/webapp/`: The Hono web server for webhooks.
+
+## Webhook Server
+
+This framework includes a built-in Hono web server to trigger tasks via HTTP.
+
+### Starting the Server
+- Development: `npm run dev:web`
+- Production: `npm run start:web`
+
+### Triggering Tasks
+Send a POST request to `/api/webhooks/<TRIGGER_ID>` with a JSON payload. The payload is passed directly to the task.
+
+**Example:**
+```bash
+curl -X POST http://localhost:3000/api/webhooks/answer-question \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is AI?"}'
+```

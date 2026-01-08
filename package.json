@@ -2,8 +2,10 @@
   "author": "",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@hono/node-server": "^1.19.7",
     "@trigger.dev/sdk": "4.3.2",
     "dotenv": "^16.4.5",
+    "hono": "^4.11.3",
     "resend": "^6.6.0",
     "rss-parser": "^3.13.0",
     "zod": "^3.23.8"
@@ -27,7 +29,9 @@
   "scripts": {
     "create-workflow": "ts-node src/agent/builder.ts",
     "deploy": "npx trigger.dev@latest deploy",
-    "dev": "npx trigger.dev@latest dev"
+    "dev": "npx trigger.dev@latest dev",
+    "dev:web": "ts-node src/webapp/index.ts",
+    "start:web": "ts-node src/webapp/index.ts"
   },
   "version": "1.0.0"
 }
