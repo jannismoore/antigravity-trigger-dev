@@ -1,6 +1,6 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
-import { tasks } from '@trigger.dev/sdk/v3'
+import { tasks, runs } from '@trigger.dev/sdk/v3'
 import { config } from 'dotenv'
 
 config()
@@ -34,10 +34,37 @@ app.post('/api/webhooks/:triggerId', async (c) => {
         return c.json({ error: 'Invalid payload' }, 400)
     }
 
+    const mode = c.req.query('mode') ?? 'async'
+
     try {
         console.log(`Triggering task: ${triggerId} with payload:`, JSON.stringify(payload, null, 2))
 
         const handle = await tasks.trigger(triggerId, payload)
+
+        if (mode === 'sync') {
+            let run = await runs.retrieve(handle.id)
+            while (!['COMPLETED', 'CANCELED', 'FAILED', 'CRASHED', 'SYSTEM_FAILURE'].includes(run.status)) {
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                run = await runs.retrieve(handle.id)
+            }
+
+            if (run.status === 'COMPLETED') {
+                return c.json({
+                    success: true,
+                    triggerId,
+                    runId: run.id,
+                    output: run.output,
+                })
+            } else {
+                return c.json({
+                    success: false,
+                    triggerId,
+                    runId: run.id,
+                    status: run.status,
+                    error: run.error,
+                }, 500)
+            }
+        }
 
         return c.json({
             success: true,

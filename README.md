@@ -67,7 +67,15 @@ Send a POST request to `/api/webhooks/<TRIGGER_ID>` with a JSON payload. The pay
 
 **Example:**
 ```bash
-curl -X POST http://localhost:3000/api/webhooks/answer-question \
+  -d '{"question": "What is AI?"}'
+```
+
+### Synchronous Execution
+To wait for the task to complete and get the result in the response, add `?mode=sync` to the URL.
+
+**Example:**
+```bash
+curl -X POST "http://localhost:3000/api/webhooks/answer-question?mode=sync" \
   -H "Content-Type: application/json" \
   -d '{"question": "What is AI?"}'
 ```

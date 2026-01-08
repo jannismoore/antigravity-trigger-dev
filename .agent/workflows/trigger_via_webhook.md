@@ -21,8 +21,14 @@ To trigger a Trigger.dev workflow from an external source (like a webhook from a
     *   Set `Content-Type: application/json`.
     *   Include the task payload in the body.
 
+      -d '{"key": "value"}'
+    ```
+
+    **Sync Mode (Wait for Result)**:
+    To wait for the task to finish and receive the output in the response, use `?mode=sync`.
+
     ```bash
-    curl -X POST http://localhost:3000/api/webhooks/my-task-id \
+    curl -X POST "http://localhost:3000/api/webhooks/my-task-id?mode=sync" \
       -H "Content-Type: application/json" \
       -d '{"key": "value"}'
     ```
