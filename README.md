@@ -33,6 +33,15 @@ Start the dev server to run your defined tasks:
 npm run dev
 ```
 
+### Deploying to Production
+To deploy your tasks to the Trigger.dev cloud platform:
+```bash
+npm run deploy
+```
+Follow the interactive prompts to authorize and select your project.
+
+For more information, visit the [deployment documentation](https://trigger.dev/docs/deployment/overview).
+
 ### Creating Workflows with AI
 You can generate a new workflow by describing it:
 ```bash
