@@ -20,7 +20,8 @@ This project framework allows you to create deterministic, background workflows 
     cp .env.example .env
     ```
     - `GOOGLE_API_KEY`: Your Google Gemini API Key.
-    - `TRIGGER_SECRET_KEY`: Your Trigger.dev Secret Key (for local dev).
+    - `TRIGGER_SECRET_KEY`: Your Trigger.dev Secret Key (production).
+    - `TRIGGER_SECRET_KEY_STAGING`: Your Trigger.dev Secret Key (staging/development).
 
 3.  **Trigger Project**:
     Ensure `trigger.config.ts` has your correct Project ID.
@@ -78,14 +79,14 @@ For production deployments, you can secure your webhooks by setting the `WEBHOOK
 
 **Provide the secret via query parameter:**
 ```bash
-curl -X POST "http://localhost:3000/api/webhooks/answer-question?agtr_secret=your_secret_here" \
+curl -X POST "http://localhost:3000/api/webhooks/production/answer-question?agtr_secret=your_secret_here" \
   -H "Content-Type: application/json" \
   -d '{"question": "What is AI?"}'
 ```
 
 **Or via header:**
 ```bash
-curl -X POST "http://localhost:3000/api/webhooks/answer-question" \
+curl -X POST "http://localhost:3000/api/webhooks/production/answer-question" \
   -H "Content-Type: application/json" \
   -H "X-Webhook-Secret: your_secret_here" \
   -d '{"question": "What is AI?"}'
@@ -95,11 +96,23 @@ curl -X POST "http://localhost:3000/api/webhooks/answer-question" \
 > If `WEBHOOK_SECRET` is not set in your environment, webhook authentication is disabled and all requests will be accepted.
 
 ### Triggering Tasks
-Send a POST request to `/api/webhooks/<TRIGGER_ID>` with a JSON payload. The payload is passed directly to the task.
+Send a POST request to `/api/webhooks/<ENV>/<TRIGGER_ID>` with a JSON payload. The payload is passed directly to the task.
 
-**Example:**
+**Environment Parameter:**
+The `<ENV>` parameter specifies which Trigger.dev environment to use:
+- `production`: Uses `TRIGGER_SECRET_KEY` environment variable
+- `staging`: Uses `TRIGGER_SECRET_KEY_STAGING` environment variable
+
+**Example (Production):**
 ```bash
-curl -X POST "http://localhost:3000/api/webhooks/answer-question" \
+curl -X POST "http://localhost:3000/api/webhooks/production/answer-question" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is AI?"}'
+```
+
+**Example (Staging):**
+```bash
+curl -X POST "http://localhost:3000/api/webhooks/staging/answer-question" \
   -H "Content-Type: application/json" \
   -d '{"question": "What is AI?"}'
 ```
@@ -109,7 +122,14 @@ To wait for the task to complete and get the result in the response, add `?mode=
 
 **Example:**
 ```bash
-curl -X POST "http://localhost:3000/api/webhooks/answer-question?mode=sync" \
+curl -X POST "http://localhost:3000/api/webhooks/production/answer-question?mode=sync" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is AI?"}'
+```
+
+**With both environment and sync mode:**
+```bash
+curl -X POST "http://localhost:3000/api/webhooks/staging/answer-question?mode=sync" \
   -H "Content-Type: application/json" \
   -d '{"question": "What is AI?"}'
 ```

@@ -11,8 +11,29 @@ app.get('/', (c) => {
     return c.text('Antigravity Trigger.dev Webhook Server is running!')
 })
 
-app.post('/api/webhooks/:triggerId', async (c) => {
+app.post('/api/webhooks/:env/:triggerId', async (c) => {
+    const env = c.req.param('env')
     const triggerId = c.req.param('triggerId')
+
+    // Validate environment parameter
+    if (!['production', 'staging'].includes(env)) {
+        return c.json({ error: 'Invalid environment. Must be either "production" or "staging"' }, 400)
+    }
+
+    // Set the appropriate Trigger.dev API key based on environment
+    const apiKey = env === 'production'
+        ? process.env.TRIGGER_SECRET_KEY
+        : process.env.TRIGGER_SECRET_KEY_STAGING
+
+    if (!apiKey) {
+        return c.json({
+            error: `Missing API key for ${env} environment. Please set ${env === 'production' ? 'TRIGGER_SECRET_KEY' : 'TRIGGER_SECRET_KEY_STAGING'} in .env`
+        }, 500)
+    }
+
+    // Temporarily set the API key for this request
+    const originalKey = process.env.TRIGGER_SECRET_KEY
+    process.env.TRIGGER_SECRET_KEY = apiKey
 
     // Validate webhook secret if WEBHOOK_SECRET is set
     const expectedSecret = process.env.WEBHOOK_SECRET
@@ -23,6 +44,8 @@ app.post('/api/webhooks/:triggerId', async (c) => {
         const providedSecret = querySecret || headerSecret
 
         if (!providedSecret || providedSecret !== expectedSecret) {
+            // Restore original key before returning
+            if (originalKey) process.env.TRIGGER_SECRET_KEY = originalKey
             return c.json({ error: 'Unauthorized: Invalid or missing webhook secret' }, 401)
         }
     }
@@ -44,13 +67,15 @@ app.post('/api/webhooks/:triggerId', async (c) => {
         }
     } catch (e) {
         console.error('Failed to parse payload', e)
+        // Restore original key before returning
+        if (originalKey) process.env.TRIGGER_SECRET_KEY = originalKey
         return c.json({ error: 'Invalid payload' }, 400)
     }
 
     const mode = c.req.query('mode') ?? 'async'
 
     try {
-        console.log(`Triggering task: ${triggerId} with payload:`, JSON.stringify(payload, null, 2))
+        console.log(`Triggering task: ${triggerId} in ${env} environment with payload:`, JSON.stringify(payload, null, 2))
 
         const handle = await tasks.trigger(triggerId, payload)
 
@@ -60,6 +85,9 @@ app.post('/api/webhooks/:triggerId', async (c) => {
                 await new Promise(resolve => setTimeout(resolve, 1000))
                 run = await runs.retrieve(handle.id)
             }
+
+            // Restore original key
+            if (originalKey) process.env.TRIGGER_SECRET_KEY = originalKey
 
             if (run.status === 'COMPLETED') {
                 return c.json({
@@ -79,6 +107,9 @@ app.post('/api/webhooks/:triggerId', async (c) => {
             }
         }
 
+        // Restore original key for async mode
+        if (originalKey) process.env.TRIGGER_SECRET_KEY = originalKey
+
         return c.json({
             success: true,
             triggerId,
@@ -87,6 +118,8 @@ app.post('/api/webhooks/:triggerId', async (c) => {
         })
     } catch (error) {
         console.error('Failed to trigger task:', error)
+        // Restore original key on error
+        if (originalKey) process.env.TRIGGER_SECRET_KEY = originalKey
         return c.json({
             success: false,
             error: error instanceof Error ? error.message : String(error)
