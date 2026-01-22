@@ -5,9 +5,27 @@ dist
 coverage
 .nyc_output
 
-
 # Trigger.dev
 .trigger
 
 # Agent snapshots
 .agent/snapshots
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+.venv/
+venv/
+ENV/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/

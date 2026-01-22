@@ -1,0 +1,4 @@
+# Python dependencies for Modal webhook server
+fastapi>=0.109.0
+httpx>=0.26.0
+uvicorn>=0.27.0

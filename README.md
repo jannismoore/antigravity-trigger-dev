@@ -43,15 +43,33 @@ Follow the interactive prompts to authorize and select your project.
 
 For more information, visit the [deployment documentation](https://trigger.dev/docs/deployment/overview).
 
-### Docker Deployment
-Deploy the webhook web server using Docker:
+### Webhook Server Deployment (Choose One)
+
+The webhook server lets external services trigger your Trigger.dev tasks via HTTP. **Choose one deployment option:**
+
+| Option | Command | Best For |
+|--------|---------|----------|
+| **Docker/Render** | `docker-compose up -d` | Traditional hosting, no cold starts |
+| **Modal** | `modal deploy modal_app.py` | Serverless, pay-per-use |
+
+**Option A: Docker/Render (Node.js)**
 ```bash
 docker-compose up -d
+# Server at http://localhost:3000
 ```
 
-The web server will be available at `http://localhost:3000`. Deploy Trigger.dev workflows separately using `npm run deploy`.
+**Option B: Modal (Python/Serverless)**
+```bash
+pip install modal
+modal token new
+modal secret create trigger-secrets \
+  TRIGGER_SECRET_KEY=your_prod_key \
+  TRIGGER_SECRET_KEY_STAGING=your_staging_key
+modal deploy modal_app.py
+# Server at https://<username>--antigravity-webhook-fastapi-app.modal.run
+```
 
-For detailed Docker instructions, see [Docker Deployment Guide](docs/DOCKER.md).
+📖 **Full guide:** [Webhook Integration](docs/WEBHOOK_INTEGRATION.md)
 
 ### Creating Workflows with AI
 You can generate a new workflow by describing it:
@@ -81,73 +99,40 @@ Snapshots are saved to `.agent/snapshots/latest.md`.
 ## Directory Structure
 - `src/trigger/`: Where your workflow task files live.
 - `src/agent/`: The code for the Agentic Builder.
-- `src/webapp/`: The Hono web server for webhooks.
+- `src/webapp/`: The Hono web server for webhooks (Node.js/Docker).
+- `src/webapp_modal/`: The FastAPI web server for webhooks (Python/Modal).
 
-## Webhook Server
+## Webhook API
 
-This framework includes a built-in Hono web server to trigger tasks via HTTP.
+Trigger tasks via HTTP using the webhook server (see [deployment options](#webhook-server-deployment-choose-one) above).
 
-### Starting the Server
-- Development: `npm run dev:web`
-- Production: `npm run start:web`
+### Endpoint
 
-### Webhook Security
+```
+POST /api/webhooks/{env}/{taskId}
+```
 
-For production deployments, you can secure your webhooks by setting the `WEBHOOK_SECRET` environment variable. When set, all webhook requests must include this secret.
+- `env`: `production` or `staging`
+- `taskId`: Your Trigger.dev task ID
+- `mode=sync` (optional): Wait for task completion
 
-**Provide the secret via query parameter:**
+### Examples
+
 ```bash
-curl -X POST "http://localhost:3000/api/webhooks/production/answer-question?agtr_secret=your_secret_here" \
+# Async (returns immediately)
+curl -X POST "https://your-server/api/webhooks/production/answer-question" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is AI?"}'
+
+# Sync (waits for completion)
+curl -X POST "https://your-server/api/webhooks/production/answer-question?mode=sync" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is AI?"}'
+
+# With authentication
+curl -X POST "https://your-server/api/webhooks/production/answer-question?agtr_secret=your_secret" \
   -H "Content-Type: application/json" \
   -d '{"question": "What is AI?"}'
 ```
 
-**Or via header:**
-```bash
-curl -X POST "http://localhost:3000/api/webhooks/production/answer-question" \
-  -H "Content-Type: application/json" \
-  -H "X-Webhook-Secret: your_secret_here" \
-  -d '{"question": "What is AI?"}'
-```
-
-> [!NOTE]
-> If `WEBHOOK_SECRET` is not set in your environment, webhook authentication is disabled and all requests will be accepted.
-
-### Triggering Tasks
-Send a POST request to `/api/webhooks/<ENV>/<TRIGGER_ID>` with a JSON payload. The payload is passed directly to the task.
-
-**Environment Parameter:**
-The `<ENV>` parameter specifies which Trigger.dev environment to use:
-- `production`: Uses `TRIGGER_SECRET_KEY` environment variable
-- `staging`: Uses `TRIGGER_SECRET_KEY_STAGING` environment variable
-
-**Example (Production):**
-```bash
-curl -X POST "http://localhost:3000/api/webhooks/production/answer-question" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is AI?"}'
-```
-
-**Example (Staging):**
-```bash
-curl -X POST "http://localhost:3000/api/webhooks/staging/answer-question" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is AI?"}'
-```
-
-### Synchronous Execution
-To wait for the task to complete and get the result in the response, add `?mode=sync` to the URL.
-
-**Example:**
-```bash
-curl -X POST "http://localhost:3000/api/webhooks/production/answer-question?mode=sync" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is AI?"}'
-```
-
-**With both environment and sync mode:**
-```bash
-curl -X POST "http://localhost:3000/api/webhooks/staging/answer-question?mode=sync" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is AI?"}'
-```
+📖 **Full API reference:** [Webhook Integration](docs/WEBHOOK_INTEGRATION.md)
